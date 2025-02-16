@@ -5,6 +5,7 @@ from .models import Movie, Director, Review
 from .serializers import MovieSerializer, DirectorSerializer, ReviewSerializer
 
 class DirectorViewSet(ModelViewSet):
+    permission_classes = [DjangoModelPermissions]
     queryset = Director.objects.all()
     serializer_class = DirectorSerializer
 
