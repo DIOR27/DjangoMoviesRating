@@ -19,6 +19,9 @@ class Movie(models.Model):
     description = models.TextField(blank=True)
     average_rating = models.FloatField(default=0)
 
+    def __str__(self):
+        return self.name
+
 
 class Review(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
