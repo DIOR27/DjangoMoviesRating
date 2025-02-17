@@ -27,7 +27,7 @@ class Review(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
     rating = models.FloatField(default=0)
     comment = models.TextField()
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
         return f"[{self.rating}/5] - {self.comment}"
