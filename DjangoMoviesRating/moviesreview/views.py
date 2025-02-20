@@ -41,8 +41,6 @@ class ReviewViewSet(ModelViewSet):
         :return: True si el usuario tiene permiso, o una respuesta de error 403 en
         caso contrario.
         """
-        if review.user == request.user:
-            return True
 
         if request.user.groups.filter(name="Movies Administrators").exists():
             return True
