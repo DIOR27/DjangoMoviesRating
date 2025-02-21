@@ -15,6 +15,7 @@ from .views import (
     DirectorUpdateView,
     DirectorDeleteView,
     top_movies,
+    top_movies_by_user,
 )
 
 defaultRouter = DefaultRouter()
@@ -54,6 +55,9 @@ urlpatterns = [
         name="directors-delete",
     ),
     path("movies/top/<int:top_number>/", top_movies, name="top-movies"),
+    path(
+        "movies/user/<int:top_number>/", top_movies_by_user, name="top-movies-by-user"
+    ),
 ]
 
 urlpatterns += defaultRouter.urls

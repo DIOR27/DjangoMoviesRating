@@ -1,9 +1,9 @@
 from django.db.models import Avg
 from rest_framework import generics, status
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import DjangoModelPermissions
+from rest_framework.permissions import DjangoModelPermissions, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from .models import Movie, Director, Review
 from .serializers import MovieSerializer, DirectorSerializer, ReviewSerializer
 
@@ -140,8 +140,10 @@ class CriticReviewMovieListView(generics.ListAPIView):
     permission_classes = [DjangoModelPermissions]
 
     def get_queryset(self):
-        movie_id = self.kwargs.get("movie_id") 
-        return Review.objects.filter(user=self.request.user, movie_id=movie_id).order_by('-updated_at')
+        movie_id = self.kwargs.get("movie_id")
+        return Review.objects.filter(
+            user=self.request.user, movie_id=movie_id
+        ).order_by("-updated_at")
 
     queryset = get_queryset
     serializer_class = ReviewSerializer
@@ -254,4 +256,35 @@ def top_movies(request, top_number):
             status=status.HTTP_404_NOT_FOUND,
         )
     serializer = MovieSerializer(top_movies, many=True)
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])  # Solo usuarios autenticados pueden acceder
+def top_movies_by_user(request, top_number):
+    """
+    Devuelve las N películas mejor calificadas por el usuario autenticado.
+    """
+    user = request.user  # Obtener el usuario autenticado
+
+    # Filtrar las reseñas del usuario y calcular el promedio de calificación por película
+    movies_rated_by_user = (
+        Review.objects.filter(user=user)
+        .values("movie")
+        .annotate(user_avg_rating=Avg("rating"))
+        .order_by("-user_avg_rating")[:top_number]
+    )
+
+    if not movies_rated_by_user:
+        return Response(
+            {"detail": "No has calificado ninguna película."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    # Obtener las películas correspondientes
+    movie_ids = [entry["movie"] for entry in movies_rated_by_user]
+    movies = Movie.objects.filter(id__in=movie_ids)
+
+    # Serializar y devolver los datos
+    serializer = MovieSerializer(movies, many=True)
     return Response(serializer.data)
