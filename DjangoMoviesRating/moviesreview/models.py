@@ -28,6 +28,8 @@ class Review(models.Model):
     rating = models.FloatField(default=0)
     comment = models.TextField()
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"[{self.rating}/5] - {self.comment}"
