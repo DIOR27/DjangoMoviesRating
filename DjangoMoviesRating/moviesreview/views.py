@@ -17,18 +17,18 @@ class ReviewViewSet(ModelViewSet):
         review = serializer.save(user=self.request.user)
         self.update_movie_rating(review.movie)
 
-    def _check_group(self, request, review):
+    def _check_group(self, request):
         """
         Verifica si el usuario autenticado tiene permiso para acceder a la
-        rese a proporcionada.
+        reseña proporcionada.
 
         Si el usuario es el dueño de la reseña o pertenece al grupo
         "Movies Administrators", el método devuelve True. De lo contrario,
         devuelve una respuesta de error 403.
 
-        :param request: La solicitud HTTP que contiene la informaci n del usuario
+        :param request: La solicitud HTTP que contiene la información del usuario
         autenticado.
-        :param review: La rese a a la que se intenta acceder.
+        :param review: La reseña a la que se intenta acceder.
         :return: True si el usuario tiene permiso, o una respuesta de error 403 en
         caso contrario.
         """
@@ -64,8 +64,7 @@ class ReviewViewSet(ModelViewSet):
         :return: Una respuesta HTTP con el resultado de la operación de actualización.
         """
 
-        review = self.get_object()
-        permission_check = self._check_group(request, review)
+        permission_check = self._check_group(request)
 
         if isinstance(permission_check, Response):
             return permission_check  # Retorna la respuesta 403 si no tiene permisos
@@ -86,8 +85,7 @@ class ReviewViewSet(ModelViewSet):
         :param kwargs: Argumentos adicionales con nombre.
         :return: Una respuesta HTTP con el resultado de la operación de actualización.
         """
-        review = self.get_object()
-        permission_check = self._check_group(request, review)
+        permission_check = self._check_group(request)
 
         if isinstance(permission_check, Response):
             return permission_check  # Retorna la respuesta 403 si no tiene permisos
@@ -103,8 +101,7 @@ class ReviewViewSet(ModelViewSet):
         self.update_movie_rating(movie)
 
     def destroy(self, request, *args, **kwargs):
-        review = self.get_object()
-        permission_check = self._check_group(request, review)
+        permission_check = self._check_group(request)
 
         if isinstance(permission_check, Response):
             return permission_check  # Retorna 403 si no tiene permisos
