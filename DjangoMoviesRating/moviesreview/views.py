@@ -3,6 +3,7 @@ from rest_framework import generics, status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
+from rest_framework.decorators import api_view
 from .models import Movie, Director, Review
 from .serializers import MovieSerializer, DirectorSerializer, ReviewSerializer
 
@@ -239,3 +240,18 @@ class DirectorDeleteView(generics.DestroyAPIView):
     permission_classes = [DjangoModelPermissions]
     queryset = Director.objects.all()
     serializer_class = DirectorSerializer
+
+
+@api_view(["GET"])
+def top_movies(request, top_number):
+    """
+    Devuelve las n películas mejor calificadas.
+    """
+    top_movies = Movie.objects.order_by("-average_rating")[:top_number]
+    if not top_movies:
+        return Response(
+            {"detail": "No hay películas disponibles en este momento."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    serializer = MovieSerializer(top_movies, many=True)
+    return Response(serializer.data)
