@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from .models import Movie, Director, Review
 from .serializers import MovieSerializer, DirectorSerializer, ReviewSerializer
 
+
 class ReviewViewSet(ModelViewSet):
     permission_classes = [DjangoModelPermissions]
     queryset = Review.objects.all()
@@ -134,6 +135,17 @@ class CriticReviewListView(generics.ListAPIView):
     serializer_class = ReviewSerializer
 
 
+class CriticReviewMovieListView(generics.ListAPIView):
+    permission_classes = [DjangoModelPermissions]
+
+    def get_queryset(self):
+        movie_id = self.kwargs.get("movie_id") 
+        return Review.objects.filter(user=self.request.user, movie_id=movie_id).order_by('-updated_at')
+
+    queryset = get_queryset
+    serializer_class = ReviewSerializer
+
+
 class CriticReviewUpdateView(generics.UpdateAPIView):
     permission_classes = [DjangoModelPermissions]
 
@@ -182,15 +194,18 @@ class MovieListView(generics.ListAPIView):
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
 
+
 class MovieCreateView(generics.CreateAPIView):
     permission_classes = [DjangoModelPermissions]
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
 
+
 class MovieUpdateView(generics.UpdateAPIView):
     permission_classes = [DjangoModelPermissions]
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
+
 
 class MovieDeleteView(generics.DestroyAPIView):
     permission_classes = [DjangoModelPermissions]
@@ -207,15 +222,18 @@ class DirectorListView(generics.ListAPIView):
     queryset = Director.objects.all()
     serializer_class = DirectorSerializer
 
+
 class DirectorCreateView(generics.CreateAPIView):
     permission_classes = [DjangoModelPermissions]
     queryset = Director.objects.all()
     serializer_class = DirectorSerializer
 
+
 class DirectorUpdateView(generics.UpdateAPIView):
     permission_classes = [DjangoModelPermissions]
     queryset = Director.objects.all()
     serializer_class = DirectorSerializer
+
 
 class DirectorDeleteView(generics.DestroyAPIView):
     permission_classes = [DjangoModelPermissions]
