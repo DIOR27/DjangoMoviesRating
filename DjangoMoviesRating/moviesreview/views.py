@@ -1,3 +1,4 @@
+from django.db.models import Avg
 from rest_framework import generics, status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import DjangoModelPermissions
@@ -5,26 +6,14 @@ from rest_framework.response import Response
 from .models import Movie, Director, Review
 from .serializers import MovieSerializer, DirectorSerializer, ReviewSerializer
 
-
-class DirectorViewSet(ModelViewSet):
-    permission_classes = [DjangoModelPermissions]
-    queryset = Director.objects.all()
-    serializer_class = DirectorSerializer
-
-
-class MovieViewSet(ModelViewSet):
-    permission_classes = [DjangoModelPermissions]
-    queryset = Movie.objects.all()
-    serializer_class = MovieSerializer
-
-
 class ReviewViewSet(ModelViewSet):
     permission_classes = [DjangoModelPermissions]
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        review = serializer.save(user=self.request.user)
+        self.update_movie_rating(review.movie)
 
     def _check_group(self, request, review):
         """
@@ -49,6 +38,14 @@ class ReviewViewSet(ModelViewSet):
             {"detail": "Solo los administradores pueden acceder a este endpoint."},
             status=status.HTTP_403_FORBIDDEN,
         )
+
+    def perform_update(self, serializer):
+        """
+        Actualiza la reseña y recalcula el promedio de calificación de la película.
+        """
+        review = self.get_object()
+        serializer.save()
+        self.update_movie_rating(review.movie)
 
     def update(self, request, *args, **kwargs):
         """
@@ -95,6 +92,14 @@ class ReviewViewSet(ModelViewSet):
 
         return super().partial_update(request, *args, **kwargs)
 
+    def perform_destroy(self, instance):
+        """
+        Elimina la reseña y recalcula el promedio de calificación de la película.
+        """
+        movie = instance.movie
+        instance.delete()
+        self.update_movie_rating(movie)
+
     def destroy(self, request, *args, **kwargs):
         review = self.get_object()
         permission_check = self._check_group(request, review)
@@ -103,6 +108,17 @@ class ReviewViewSet(ModelViewSet):
             return permission_check  # Retorna 403 si no tiene permisos
 
         return super().destroy(request, *args, **kwargs)
+
+    def update_movie_rating(self, movie):
+        """
+        Calcula y actualiza el `average_rating` de una película basada en sus reseñas.
+        """
+        avg_rating = (
+            Review.objects.filter(movie=movie).aggregate(Avg("rating"))["rating__avg"]
+            or 0
+        )
+        movie.average_rating = round(avg_rating, 2)  # Redondear a 2 decimales
+        movie.save()
 
 
 # region Reviews
@@ -127,6 +143,25 @@ class CriticReviewUpdateView(generics.UpdateAPIView):
     queryset = get_queryset
     serializer_class = ReviewSerializer
 
+    def perform_update(self, serializer):
+        """
+        Actualiza la reseña y recalcula el promedio de calificación de la película.
+        """
+        review = self.get_object()
+        serializer.save()
+        self.update_movie_rating(review.movie)
+
+    def update_movie_rating(self, movie):
+        """
+        Calcula y actualiza el `average_rating` de una película basada en sus reseñas.
+        """
+        avg_rating = (
+            Review.objects.filter(movie=movie).aggregate(Avg("rating"))["rating__avg"]
+            or 0
+        )
+        movie.average_rating = round(avg_rating, 2)  # Redondear a 2 decimales
+        movie.save()
+
 
 class CriticReviewDeleteView(generics.DestroyAPIView):
     permission_classes = [DjangoModelPermissions]
@@ -139,3 +174,50 @@ class CriticReviewDeleteView(generics.DestroyAPIView):
 
 
 # endregion Reviews
+
+
+# region Movies
+class MovieListView(generics.ListAPIView):
+    permission_classes = [DjangoModelPermissions]
+    queryset = Movie.objects.all()
+    serializer_class = MovieSerializer
+
+class MovieCreateView(generics.CreateAPIView):
+    permission_classes = [DjangoModelPermissions]
+    queryset = Movie.objects.all()
+    serializer_class = MovieSerializer
+
+class MovieUpdateView(generics.UpdateAPIView):
+    permission_classes = [DjangoModelPermissions]
+    queryset = Movie.objects.all()
+    serializer_class = MovieSerializer
+
+class MovieDeleteView(generics.DestroyAPIView):
+    permission_classes = [DjangoModelPermissions]
+    queryset = Movie.objects.all()
+    serializer_class = MovieSerializer
+
+
+# endregion Movies
+
+
+# region Directors
+class DirectorListView(generics.ListAPIView):
+    permission_classes = [DjangoModelPermissions]
+    queryset = Director.objects.all()
+    serializer_class = DirectorSerializer
+
+class DirectorCreateView(generics.CreateAPIView):
+    permission_classes = [DjangoModelPermissions]
+    queryset = Director.objects.all()
+    serializer_class = DirectorSerializer
+
+class DirectorUpdateView(generics.UpdateAPIView):
+    permission_classes = [DjangoModelPermissions]
+    queryset = Director.objects.all()
+    serializer_class = DirectorSerializer
+
+class DirectorDeleteView(generics.DestroyAPIView):
+    permission_classes = [DjangoModelPermissions]
+    queryset = Director.objects.all()
+    serializer_class = DirectorSerializer
